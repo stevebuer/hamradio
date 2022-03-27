@@ -1,0 +1,18 @@
+Radio and Signalink Settings
+----------------------------
+
+VX-8DR
+------
+
+FT-897
+------
+
+FT-8900R
+--------
+
+Signalink
+---------
+
+TX: 6
+RX: 7
+DLY: 2
