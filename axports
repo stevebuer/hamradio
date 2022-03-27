@@ -1,0 +1,12 @@
+# /etc/ax25/axports
+# 
+# N7MKO axports
+#
+# name callsign speed paclen window description
+# 
+
+hf	N7MKO-14	300	255	3	10.149 Mhz (300 bps)
+6m	N7MKO-13	1200	255	3	50.620 MHz (1200 bps)
+2m	N7MKO-12	1200	255	4	144.91 MHz (1200 bps)
+uhf	N7MKO-11	9600	255	4	UHF 9600 baud 
+axip	N7MKO-10	-	255	4	axip interface
