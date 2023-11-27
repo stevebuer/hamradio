@@ -1,2 +1,2 @@
-# ax25
-AX.25 Programs and Configuration Files
+# Ham Radio
+Ham radio programs and configuration files
