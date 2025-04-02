@@ -1,0 +1,9 @@
+Package: sbc-tracker
+Version: 0.5.1
+Section: hamradio
+Priority: optional
+Architecture: all
+Depends: direwolf, gpsd
+Maintainer: Steve Buer <steve@jxqz.org>
+Description: single-board computer tracker
+ Collection of scripts to configure a tracker
