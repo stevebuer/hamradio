@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<project name="SBC Java Lib" default="info">
+	<description>
+   		Utility library for Android SBC tracker
+   	</description>
+
+   	<property name="src" location="src"/>
+   	<property name="build" location="build"/>
+   	<property name="dist" location="dist"/>
+
+	<target name="info">
+		<echo>Building SBC Java Library</echo>
+	</target>
+
+	<target name="init" depends="info">
+		<mkdir dir="${build}"/>
+	</target>
+
+   	<target name="compile" depends="init">
+		<javac srcdir="${src}" destdir="${build}" includeantruntime="false"/>
+   	</target>
+</project>
+
