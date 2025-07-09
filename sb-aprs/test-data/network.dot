@@ -1,0 +1,11 @@
+/* sample graphivz network graph */
+
+graph G {
+
+	N7MKO -- JUPITR;
+	"N7MKO-9" -- N7MKO;
+	JUPITR -- { BALDI ERINB VCAPK };
+	BALDI -- ERINB;
+	VCAPK -- BALDI;
+	VCAPK -- ERINB;
+}

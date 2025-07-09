@@ -1,0 +1,182 @@
+'
+' Steve Buer
+' CS 143 Olympic College
+'
+' Final Project
+'
+@startuml
+
+SBAprs --> Aprs
+SBAprs --> Ax25
+SBAprs --> SBLog
+SBAprs --> AprsContext 
+Ax25 --> AprsContext
+SBAprs --> Ax25Client
+SBAprs --> GpsdClient
+SBAprs --> AprsIsClient
+AprsApiServer --> AprsContext 
+AprsApiServer --> GraphHandler
+AprsApiServer --> StatusHandler
+AprsApiServer --> MheardHandler
+AprsContext --> AprsGraph
+
+class "AprsContext" {
+-myCall : String
+-latitude : double
+-longitude : double
+-altitude : double
++mheardMap : TreeMap<String, String>
++distanceMap : TreeMap<String, Double>
++frameList : ArrayList<Ax25>
+~aprsGraph : AprsGraph
++AprsContext()
++setCall(String) : void
++mheard() : String
++myCall() : String
++myPosition() : String
++setLatitude(double) : void
++getLatitide() : double
++setLongitude(double) : void
++getLongitude() : double
+}
+
+class "GpsdClient" {
+-{static}HOST : String
+-{static}PORT : int
+~socket : Socket
+~in : BuffereReader
+~out : BufferedWriter
+~connected : boolean
++connect() : void
++getPosition() : Position
++close() : void
+-{static}parseGpsdTpv(String) : Position
+}
+
+class "AprsApiClient" {
+-{static}hostname : String
+-{static}port : int
+-{static}mheard_max : int
++AprsApiClient()
++AprsApiClient(String, in)
++{static} getMheard() : Vector
++main(String[]) : void
+}
+
+class "AprsApiServer" {
+-srv : HttpServer
+-port : int
+~context : AprsContext
++AprsApiServer()
++AprsApiServer(AprsContext)
++run() : void
+}
+
+class "StatusHandler" {
+~ctx : AprsContext
++StatusHandler(AprsContext)
++handle(HttpExchange) : void
+}
+
+class "GraphHandler" {
+~ctx : AprsContext
++GraphHandler(AprsContext)
++handle(HttpExchange) : void
+}
+
+class "MheardHandler" {
+~ctx : AprsContext
++MheardHandler(AprsContext)
++handle(HttpExchange) : void
+}
+
+class "AprsGraph" {
+-{static}EARTH_METERS : double
+-{static}EARTH_MILES : double
+-{static}useMeters : boolean
++{static}edgeSet : CopyOnWriteArraySet<String>
++{static}vertexSet : CopyOnWriteArraySet<String>
++AprsGraph()
++{static}haversineDistance(double, double, double, double) : double
+-{static}hav(double) : double
++{static}addEdge(String, String) : void
++{static}outputGraph() : String
++{static}toDotFormat(String) : String
++{static}main(String[]) : void
+}
+
+class "SBAprs" {
+-{static}configFile : String
+-{static}fifoFile : String
+-{static}dataFile : String
+-{static}useGpsd : boolean
+-{static}debug : boolean
+-{static}webServer : boolean
+-{static}aprsIsClient : boolean
+-{static}aprs : AprsContext
++{static}main(String[]) : void
+~{static}parseConfigLine(String) : void
+~{static}loadConfig(String) : void
+-{static}parseArgs(String[]) : void
++{static}storeMetaData(Ax25) : void
+}
+
+class "Ax25Client" {
+~agw : boolean
+~kiss : boolean
+~tnc2 : boolean
+~configured : boolean
+~filePath : String
+~istream : FileInputStream
+~br : BufferedReader
+packets : Vector<String>
++Ax25Client(String)
++openKissUtilFifo() : void
++nextPacket() : String
++loadKissFile(String) : void
++parseAll() : void
++dumpPackets() : String
++connectAGW() : void
++connectKiss() : void
+}
+
+class "Ax25" {
+#frame : String
+#header : String
+#data : String
+#src : String
+#dst : String
+#type : int
+#digis : Vector<String>
++Ax25(String)
++src() : String
++dst() : String
++decodeAx25(String) : void
++digiAt(int) : String
++lastDigi() : String
++digiCount() : int
+}
+
+class "Aprs" { 
+enum AprsReportType { FIXED, MOBILE, MIC_E, UNKNOWN }
+~report : String
+~aprsType : AprsReportType
+~symbol : char
++alt : double
++lat : double
++lon : double
++Aprs(String)
++hasPosition() : boolean
++decodeAprs() : void
++decodeType() : AprsReportType
++decodePositionReport() : void
+}
+
+class "SBLog" {
+enum LogLevel {DEBUG, INFO, WARN}
+~{static}level : LogLevel
++{static}log(String) : void
++{static}log(LogLevel, String) : void
+}
+
+@enduml

@@ -1,0 +1,17 @@
+<project name="SBAprs" default="run">
+<target name="run" depends="build">
+    <java jar="junit.jar" fork="true">
+             <arg line="-cp .:build --scan-classpath"/>
+    </java>
+</target>
+<target name="build">
+    <javac srcdir="junit-test:.:src" destdir="build" includeantruntime="false">
+	<classpath><pathelement location="junit.jar"/></classpath>
+    </javac>
+</target>
+<target name="javadoc">
+	<mkdir dir="docs"/>
+	<javadoc destdir="docs">
+	</javadoc>
+</target>
+</project>
