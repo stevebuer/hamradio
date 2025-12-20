@@ -1,0 +1,23 @@
+[Unit]
+Description=FT8 Mobile Tracker
+After=network.target gpsd.service
+Wants=gpsd.service
+
+[Service]
+Type=simple
+User=steve
+WorkingDirectory=/home/steve/GITHUB/hamradio/tracker
+ExecStart=/home/steve/GITHUB/hamradio/tracker/venv/bin/python3 /home/steve/GITHUB/hamradio/tracker/src/main.py -c /home/steve/GITHUB/hamradio/tracker/config/tracker.conf
+Restart=always
+RestartSec=10
+
+# Environment
+Environment="PYTHONUNBUFFERED=1"
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ft8-tracker
+
+[Install]
+WantedBy=multi-user.target
