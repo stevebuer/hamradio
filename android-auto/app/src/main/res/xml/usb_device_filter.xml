@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- USB device filter for serial devices -->
+    <!-- This is a placeholder - you'll need to add specific vendor/product IDs -->
+    <usb-device vendor-id="1027" product-id="24577" /> <!-- FTDI FT232 -->
+</resources>
