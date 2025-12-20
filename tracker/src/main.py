@@ -122,6 +122,10 @@ class FT8Tracker:
             # Initialize network server
             if self.config['network'].get('server_enabled', 'true').lower() == 'true':
                 self.network_server = NetworkServer(self.config['network'])
+                # Register GPS callback to store external GPS updates
+                self.network_server.set_gps_callback(self._on_external_gps_update)
+                # Register band callback to store band changes
+                self.network_server.set_band_callback(self._on_band_change)
                 if self.network_server.start():
                     logger.info("Network server started")
                 else:
@@ -182,11 +186,22 @@ class FT8Tracker:
             if pos:
                 gps_data = pos.to_dict()
                 logger.debug(f"  Position: {pos.latitude:.6f}, {pos.longitude:.6f}")
+        
+        # Get current band from network server (set by Android app)
+        current_band = None
+        if self.network_server:
+            current_band = self.network_server.get_current_band()
+            if current_band:
+                logger.debug(f"  Band: {current_band}")
                 
         # Store in database
         if self.database:
             try:
-                self.database.insert_decode(decode.to_dict(), gps_data)
+                decode_dict = decode.to_dict()
+                # Add band if we know it
+                if current_band:
+                    decode_dict['band'] = current_band
+                self.database.insert_decode(decode_dict, gps_data)
             except Exception as e:
                 logger.error(f"Database error: {e}")
                 
@@ -198,9 +213,44 @@ class FT8Tracker:
                 logger.error(f"Network server error: {e}")
                 
     def _on_gps_update(self, position: GPSPosition):
-        """Handle GPS position update"""
+        """Handle GPS position update from local GPS"""
         self.last_gps_position = position
         logger.debug(f"GPS update: {position}")
+    
+    def _on_external_gps_update(self, gps_data: Dict[str, Any]):
+        """Handle GPS position update from external source (Android Auto)"""
+        logger.info(f"External GPS update: {gps_data.get('latitude')}, {gps_data.get('longitude')}")
+        
+        # Store in database
+        if self.database:
+            try:
+                self.database.insert_gps_position(gps_data, source='android_auto')
+            except Exception as e:
+                logger.error(f"Failed to store external GPS: {e}")
+        
+        # If we don't have a local GPS fix, use external GPS as current position
+        if self.gps_handler and not self.gps_handler.has_fix():
+            try:
+                from gps_handler import GPSPosition
+                self.last_gps_position = GPSPosition(
+                    timestamp=datetime.fromtimestamp(gps_data.get('timestamp', time.time())),
+                    latitude=gps_data['latitude'],
+                    longitude=gps_data['longitude'],
+                    altitude=gps_data.get('altitude', 0.0),
+                    speed=gps_data.get('speed', 0.0),
+                    heading=gps_data.get('heading', 0.0),
+                    satellites=0,
+                    fix_quality=1,
+                    hdop=0.0
+                )
+                logger.info("Using external GPS as current position")
+            except Exception as e:
+                logger.error(f"Failed to create position from external GPS: {e}")
+    
+    def _on_band_change(self, band: str):
+        """Handle band change from Android app"""
+        logger.info(f"Band changed to: {band}")
+        # Band is stored in network_server.current_band and used in _on_decode()
         
     def get_status(self) -> Dict[str, Any]:
         """Get current tracker status"""

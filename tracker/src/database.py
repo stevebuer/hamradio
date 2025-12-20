@@ -77,6 +77,27 @@ class Database:
                 )
             ''')
             
+            # Create GPS positions table for external GPS updates (from Android Auto)
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS gps_positions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp INTEGER NOT NULL,
+                    latitude REAL NOT NULL,
+                    longitude REAL NOT NULL,
+                    altitude REAL,
+                    speed REAL,
+                    heading REAL,
+                    accuracy REAL,
+                    source TEXT DEFAULT 'external',
+                    created_at INTEGER DEFAULT (strftime('%s', 'now'))
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_gps_timestamp 
+                ON gps_positions(timestamp)
+            ''')
+            
             conn.commit()
             
         logger.info(f"Database initialized: {self.db_path}")
@@ -255,6 +276,54 @@ class Database:
             
         logger.info(f"Cleaned up {deleted} old records")
         return deleted
+    
+    def insert_gps_position(self, gps_data: Dict[str, Any], source: str = 'external') -> int:
+        """Insert GPS position from external source (e.g., Android Auto)"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute('''
+                INSERT INTO gps_positions (
+                    timestamp, latitude, longitude, altitude, speed, heading, accuracy, source
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                gps_data.get('timestamp', int(datetime.now().timestamp())),
+                gps_data['latitude'],
+                gps_data['longitude'],
+                gps_data.get('altitude'),
+                gps_data.get('speed'),
+                gps_data.get('heading'),
+                gps_data.get('accuracy'),
+                source
+            ))
+            
+            conn.commit()
+            position_id = cursor.lastrowid
+            
+        logger.info(f"Inserted GPS position {position_id} from {source}: {gps_data['latitude']}, {gps_data['longitude']}")
+        return position_id
+    
+    def get_latest_gps_position(self, source: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """Get the most recent GPS position, optionally filtered by source"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            
+            if source:
+                cursor.execute('''
+                    SELECT * FROM gps_positions
+                    WHERE source = ?
+                    ORDER BY timestamp DESC
+                    LIMIT 1
+                ''', (source,))
+            else:
+                cursor.execute('''
+                    SELECT * FROM gps_positions
+                    ORDER BY timestamp DESC
+                    LIMIT 1
+                ''')
+            
+            row = cursor.fetchone()
+            return dict(row) if row else None
 
 
 if __name__ == '__main__':
