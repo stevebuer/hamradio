@@ -63,10 +63,65 @@ Any line that doesn't match a known format will be displayed as-is.
 ./gradlew assembleDebug
 ```
 
+The compiled APK will be located at: `app/build/outputs/apk/debug/app-debug.apk`
+
 ### Installation
 
-1. Install the app on your Android device
-2. Enable Android Auto on your device
+#### Method 1: Direct Install via ADB (Recommended for Development)
+
+1. **Enable Developer Options on your Android phone:**
+   - Go to Settings → About Phone
+   - Tap "Build Number" 7 times
+   - You'll see a message that Developer Options are now enabled
+
+2. **Enable USB Debugging:**
+   - Go to Settings → System → Developer Options
+   - Enable "USB Debugging"
+   - (Optional) Enable "Stay awake" to keep screen on while charging
+
+3. **Connect your phone to your computer:**
+   - Use a USB cable to connect your Android phone
+   - On your phone, approve the "Allow USB debugging?" prompt
+   - Check "Always allow from this computer" for convenience
+
+4. **Install ADB if not already installed:**
+   ```bash
+   # Debian/Ubuntu
+   sudo apt install adb
+   
+   # Arch Linux
+   sudo pacman -S android-tools
+   
+   # Fedora/RHEL
+   sudo dnf install android-tools
+   ```
+
+5. **Verify your device is connected:**
+   ```bash
+   adb devices
+   ```
+   You should see your device listed. If you see "unauthorized", check your phone for the authorization prompt.
+
+6. **Install the app:**
+   ```bash
+   ./gradlew installDebug
+   ```
+   Or manually:
+   ```bash
+   adb install app/build/outputs/apk/debug/app-debug.apk
+   ```
+
+#### Method 2: Manual Installation
+
+1. Copy the APK file (`app/build/outputs/apk/debug/app-debug.apk`) to your phone
+2. On your phone, go to Settings → Security
+3. Enable "Install unknown apps" for your file manager
+4. Use a file manager to locate the APK and tap it to install
+
+#### Post-Installation Setup
+
+1. Open the app on your phone to configure settings
+2. Enable Android Auto on your device (if not already enabled)
 3. Connect your phone to your car's Android Auto system
 4. The app will appear in the messaging section
 
