@@ -126,7 +126,7 @@ class GPSUploadService : Service() {
         return Notification.Builder(this, CHANNEL_ID)
             .setContentTitle("GPS Upload Active")
             .setContentText("Sharing location with tracker")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_launcher)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .build()

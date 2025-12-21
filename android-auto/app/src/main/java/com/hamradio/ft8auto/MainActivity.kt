@@ -50,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var locationTracker: LocationTracker
     var useMiles = true // Default to miles for USA (made public for fragments)
     private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private val bands = arrayOf("Select Band", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m")
     
     // Method to expose current location to MapFragment
     fun getCurrentLatitude(): Double? = locationTracker.currentLatitude
@@ -143,7 +144,6 @@ class MainActivity : AppCompatActivity() {
         portEditText.setText("8080")
         
         // Setup band spinner
-        val bands = arrayOf("Select Band", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m")
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, bands)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         bandSpinner.adapter = adapter
@@ -197,7 +197,6 @@ class MainActivity : AppCompatActivity() {
                 .putBoolean("use_miles", useMiles)
                 .apply()
             // Fragments will pick up the change automatically
-        }
         }
         
         gpsUploadSwitch.setOnCheckedChangeListener { _, isChecked ->

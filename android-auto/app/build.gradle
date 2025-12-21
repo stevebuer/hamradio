@@ -43,7 +43,7 @@ dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
     
     // Android Auto support
-    implementation 'androidx.car.app:app:1.3.0'
+    implementation 'androidx.car.app:app:1.4.0'
     
     // Google Play Services Location for GPS
     implementation 'com.google.android.gms:play-services-location:21.0.1'

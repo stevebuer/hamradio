@@ -99,9 +99,9 @@ class FT8DataService : Service() {
                 
                 updateNotification("Connected to $host:$port")
                 
-                var line: String?
-                while (isActive && reader.readLine().also { line = it } != null) {
-                    line?.let { processLine(it) }
+                while (isActive) {
+                    val line = reader.readLine() ?: break
+                    processLine(line)
                 }
             } catch (e: Exception) {
                 updateNotification("Connection failed: ${e.message}")
