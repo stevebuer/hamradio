@@ -1,0 +1,23 @@
+#!/bin/bash
+# Pre-removal script for sbc-tracker
+
+set -e
+
+# Stop and disable service if running
+if systemctl is-active --quiet ft8-tracker; then
+    echo "Stopping ft8-tracker service..."
+    systemctl stop ft8-tracker
+fi
+
+if systemctl is-enabled --quiet ft8-tracker 2>/dev/null; then
+    echo "Disabling ft8-tracker service..."
+    systemctl disable ft8-tracker
+fi
+
+echo "sbc-tracker service stopped"
+echo ""
+echo "Note: Configuration files in /etc/sbc-tracker and data in /var/lib/sbc-tracker"
+echo "      have been preserved. Remove manually if desired."
+echo ""
+
+exit 0

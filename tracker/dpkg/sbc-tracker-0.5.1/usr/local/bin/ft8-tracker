@@ -1,0 +1,3 @@
+#!/bin/bash
+cd /opt/sbc-tracker
+exec /opt/sbc-tracker/venv/bin/python3 /opt/sbc-tracker/src/main.py "$@"

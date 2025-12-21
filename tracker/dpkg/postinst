@@ -1,0 +1,56 @@
+#!/bin/bash
+# Post-installation script for sbc-tracker
+
+set -e
+
+echo "Configuring sbc-tracker..."
+
+# Create user if doesn't exist
+if ! id -u sbc-tracker >/dev/null 2>&1; then
+    useradd -r -s /bin/false -d /opt/sbc-tracker -c "FT8 Tracker Service" sbc-tracker
+    echo "Created sbc-tracker user"
+fi
+
+# Set ownership and permissions
+chown -R sbc-tracker:sbc-tracker /var/lib/sbc-tracker
+chown -R sbc-tracker:sbc-tracker /var/log/sbc-tracker
+chmod 755 /opt/sbc-tracker
+chmod 755 /opt/sbc-tracker/src
+chmod 755 /opt/sbc-tracker/scripts
+
+# Create config if it doesn't exist
+if [ ! -f /etc/sbc-tracker/tracker.conf ]; then
+    cp /etc/sbc-tracker/tracker.conf.example /etc/sbc-tracker/tracker.conf
+    echo "Created default configuration at /etc/sbc-tracker/tracker.conf"
+    echo "*** Please edit /etc/sbc-tracker/tracker.conf with your settings ***"
+fi
+
+# Create Python virtual environment
+if [ ! -d /opt/sbc-tracker/venv ]; then
+    echo "Creating Python virtual environment..."
+    python3 -m venv /opt/sbc-tracker/venv
+    /opt/sbc-tracker/venv/bin/pip install --upgrade pip
+    /opt/sbc-tracker/venv/bin/pip install -r /opt/sbc-tracker/requirements.txt
+    chown -R sbc-tracker:sbc-tracker /opt/sbc-tracker/venv
+    echo "Python environment installed"
+fi
+
+# Reload systemd
+systemctl daemon-reload
+
+echo ""
+echo "=========================================="
+echo "sbc-tracker installation complete!"
+echo "=========================================="
+echo ""
+echo "Next steps:"
+echo "1. Edit configuration: sudo nano /etc/sbc-tracker/tracker.conf"
+echo "2. Enable service: sudo systemctl enable ft8-tracker"
+echo "3. Start service: sudo systemctl start ft8-tracker"
+echo "4. Check status: sudo systemctl status ft8-tracker"
+echo "5. View logs: sudo journalctl -u ft8-tracker -f"
+echo ""
+echo "Manual usage: ft8-tracker -c /etc/sbc-tracker/tracker.conf"
+echo ""
+
+exit 0

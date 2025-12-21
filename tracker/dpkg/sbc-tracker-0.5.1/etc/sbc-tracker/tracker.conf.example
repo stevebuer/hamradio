@@ -1,0 +1,36 @@
+[gps]
+device = /dev/ttyACM0
+baud = 9600
+timeout = 10
+
+[audio]
+device = hw:0,0
+sample_rate = 12000
+
+[ft8]
+decoder = wsjtx
+decoder_path = /usr/bin/wsjtx
+log_file = /home/steve/.local/share/WSJT-X/ALL.TXT
+bands = 80m,40m,30m,20m,17m,15m,12m,10m
+
+[database]
+path = /home/steve/GITHUB/hamradio/tracker/data/tracker.db
+
+[network]
+server_enabled = true
+server_port = 8080
+server_bind = 0.0.0.0
+# HTTP port for receiving GPS updates from Android Auto
+http_port = 8081
+
+[iot]
+enabled = true
+server = https://dx.jxqz.org
+api_key = YOUR_API_KEY_HERE
+station = N7MKO-M
+upload_interval = 300
+batch_size = 100
+
+[logging]
+level = INFO
+file = /home/steve/GITHUB/hamradio/tracker/logs/tracker.log
