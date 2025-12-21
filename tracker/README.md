@@ -17,7 +17,7 @@ A mobile HF monitoring system running on Pine64 (or Rock64) single board compute
 - ✅ GPS position logging with each decode
 - ✅ Local SQLite database storage
 - ✅ TCP server for Android Auto app
-- ✅ IoT uploader to dx.jxqz.org (when internet available)
+- ✅ Beacon server uploader to dx.jxqz.org (when internet available)
 - ✅ Automatic band detection
 - ✅ Timestamp synchronization with GPS
 
@@ -65,7 +65,7 @@ A mobile HF monitoring system running on Pine64 (or Rock64) single board compute
     ↓                   ↓
 ┌─────────┐      ┌──────────────┐
 │ Android │      │  dx.jxqz.org │
-│  Auto   │      │  IoT Server  │
+│  Auto   │      │Beacon Server │
 │  App    │      └──────────────┘
 └─────────┘
 ```
@@ -147,7 +147,7 @@ In your Android Auto app, configure connection to:
 2. **GPS Position**: USB GPS provides current location
 3. **Database**: Decode + GPS + timestamp stored in SQLite
 4. **Android Auto**: TCP server sends recent decodes to phone app
-5. **IoT Upload**: When internet available, uploads to dx.jxqz.org
+5. **Beacon Server**: When internet available, uploads to dx.jxqz.org beacon server
 
 ## FT8 Decoder Options
 

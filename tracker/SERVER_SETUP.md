@@ -1,8 +1,8 @@
-# dx.jxqz.org Server Setup - IoT Receiver
+# dx.jxqz.org Beacon Server Setup
 
 ## Overview
 
-This guide shows how to set up the server-side component on dx.jxqz.org to receive FT8 decode data from mobile trackers.
+This guide shows how to set up the beacon server component on dx.jxqz.org to receive FT8 decode data from mobile trackers. The beacon server provides permanent cloud storage for viewing and analyzing collected data.
 
 ## Architecture
 
@@ -81,7 +81,7 @@ GRANT ALL PRIVILEGES ON DATABASE ft8_iot TO ft8user;
 
 ### 4. Create Flask Application
 
-See the example code in `server/` directory (created below).
+See the example code in `../beacon-server/` directory.
 
 ### 5. Configure Nginx
 
@@ -710,11 +710,11 @@ sudo -u postgres psql ft8_iot -c "VACUUM ANALYZE;"
 
 ## See Also
 
-- `server/app.py` - Flask application code
-- `server/models.py` - Database models
-- `server/api.py` - API endpoints
-- `server/requirements.txt` - Python dependencies
+- `beacon-server/app.py` - Flask application code
+- `beacon-server/models.py` - Database models
+- `beacon-server/api.py` - API endpoints
+- `beacon-server/requirements.txt` - Python dependencies
 
-For complete server implementation code, see the `server/` directory.
+For complete beacon server implementation code, see the `../beacon-server/` directory.
 
 73!

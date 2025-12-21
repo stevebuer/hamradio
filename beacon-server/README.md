@@ -1,13 +1,31 @@
-# FT8 IoT Server
+# FT8 Beacon Server
 
-Flask application for receiving FT8 decode data from mobile tracking stations.
+Permanent cloud storage server for receiving, storing, and analyzing FT8 decode data from mobile trackers.
 
-## Quick Start
+## Overview
+
+The beacon server is a Flask application that:
+- Receives uploads from mobile tracker units via HTTPS POST
+- Stores FT8 decodes and GPS positions in PostgreSQL
+- Provides API endpoints for querying and analyzing collected data
+- Supports multiple tracker stations with API key authentication
+
+## Architecture
+
+```
+Mobile Tracker(s) → HTTPS POST → Beacon Server API → PostgreSQL Database
+                                        ↓
+                                   Authentication
+                                   Rate Limiting
+                                   Data Validation
+```
+
+## Quick Start for Local Testing
 
 ### 1. Install Dependencies
 
 ```bash
-cd server
+cd beacon-server
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
