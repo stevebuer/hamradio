@@ -141,6 +141,25 @@ In your Android Auto app, configure connection to:
 - IP: Pine64 IP address
 - Port: 8080 (default)
 
+## Testing Without Hardware
+
+**Want to test the Android app without setting up the radio hardware?** Use **test mode**!
+
+Test mode allows you to feed pre-recorded or synthetic FT8 decodes from a file instead of reading from WSJT-X or decoding live audio.
+
+```bash
+# Run tracker in test mode
+python3 ./src/main.py -c config/tracker.conf --test-file test_decodes.txt
+```
+
+Then connect your Android app to `127.0.0.1:8080` (or your laptop IP) and watch the test decodes appear in real-time.
+
+**See [TESTING.md](TESTING.md) for:**
+- How to create test data files
+- Test data format and examples
+- Tips for testing different scenarios
+- Complete testing guide
+
 ## Data Flow
 
 1. **FT8 Decoding**: WSJT-X or ft8_lib decodes audio from radio

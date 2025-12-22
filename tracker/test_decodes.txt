@@ -1,0 +1,81 @@
+# FT8 Test Data File
+# Format: HHMMSS SNR DT FREQUENCY ~ MESSAGE
+# HHMMSS  = Time in UTC (hours, minutes, seconds)
+# SNR     = Signal-to-Noise Ratio in dB (negative or positive)
+# DT      = Time offset in seconds (usually small, e.g., -0.5 to +0.5)
+# FREQ    = Frequency in MHz for 40m band (7070-7100) or other HF bands
+# MESSAGE = FT8 message (CQ calls, responses, grid squares, etc.)
+#
+# Common FT8 frequencies:
+# 80m:  3573-3580 MHz
+# 60m:  5357 MHz (USB)
+# 40m:  7070-7100 MHz
+# 30m:  10130-10140 MHz
+# 20m:  14070-14100 MHz
+# 17m:  18100-18110 MHz
+# 15m:  21070-21100 MHz
+# 12m:  24915-24925 MHz
+# 10m:  28070-28100 MHz
+# 6m:   50313 MHz
+
+# Sample CQ from station in Colorado
+120000 -12 0.3 7074 ~ CQ W0AIL EN90
+120010 +5 -0.1 7076 ~ N7MKO W0AIL EN91
+120020 -8 0.2 7074 ~ W0AIL N7MKO FM09
+
+# More stations spotted
+120030 -15 -0.4 7075 ~ CQ K1ABC FN42
+120040 -3 0.1 7077 ~ W5XYZ K1ABC EL98
+120050 +8 0.0 7074 ~ K1ABC W5XYZ FM09
+
+# East Coast traffic
+120100 -10 0.2 7078 ~ CQ WB2ABC FN31
+120110 +2 -0.2 7080 ~ N4XYZ WB2ABC EM65
+120120 -6 0.3 7078 ~ WB2ABC N4XYZ FM09
+
+# Test multiple stations simultaneously
+120200 -12 0.1 7070 ~ CQ K0XYZ EN00
+120210 -9 -0.2 7073 ~ CQ KE6 DM13
+120220 +5 0.3 7076 ~ CQ N7MKO DM09
+120230 -2 0.0 7079 ~ K0XYZ JA1XYZ FM09
+120240 -11 0.2 7074 ~ KE6 W6ABC DM04
+
+# Long path signals (weak but interesting)
+120300 -20 0.1 7075 ~ CQ VK3 OF87
+120310 -18 -0.3 7077 ~ CQ JA2 PM97
+120320 -22 0.4 7072 ~ CQ ZL2 RE67
+
+# Grid squares from various regions
+120400 -8 0.1 7070 ~ CQ N6 CM87
+120410 +3 -0.1 7075 ~ N6 N7MKO DM09
+120420 -5 0.2 7080 ~ CQ W4 EM85
+120430 -14 0.0 7073 ~ W4 K1ABC FN42
+
+# Test for 20m band
+120500 -10 0.1 14070 ~ CQ W1ABC FN31
+120510 +6 -0.2 14075 ~ W1ABC N4XYZ EM65
+120520 -7 0.3 14072 ~ CQ N5 EM12
+
+# More 40m activity
+120600 -9 0.1 7074 ~ CQ K7 DN07
+120610 -4 -0.2 7078 ~ K7 W0AIL EN90
+120620 -11 0.2 7075 ~ CQ VE3 FN25
+120630 +2 0.0 7080 ~ VE3 K1ABC FN42
+
+# High SNR signals
+120700 +12 0.1 7074 ~ CQ W2 FN31
+120710 +15 -0.1 7076 ~ W2 N7MKO DM09
+120720 +18 0.2 7078 ~ CQ W3 FM09
+
+# Mix of signals - some weak, some strong
+120800 -20 0.1 7070 ~ CQ OE DM78
+120810 -14 -0.2 7072 ~ CQ ES KO49
+120820 +8 0.3 7074 ~ CQ N7 DM09
+120830 -6 0.0 7076 ~ N7 W0AIL EN90
+120840 +11 0.1 7078 ~ CQ W5 EM12
+
+# Final set of decodes
+120900 -9 0.2 7075 ~ CQ G4 IO91
+120910 -5 -0.1 7077 ~ G4 N7MKO DM09
+120920 -12 0.3 7074 ~ CQ ZL DM57
+120930 +3 0.0 7079 ~ ZL K1ABC FN42

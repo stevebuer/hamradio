@@ -24,8 +24,9 @@ logger = logging.getLogger(__name__)
 class FT8Tracker:
     """Main FT8 Tracker service"""
     
-    def __init__(self, config_file: str):
+    def __init__(self, config_file: str, test_file: str = None):
         self.config = self._load_config(config_file)
+        self.test_file = test_file
         self.running = False
         
         # Components
@@ -144,6 +145,13 @@ class FT8Tracker:
                 
             # Initialize FT8 decoder
             decoder_type = self.config['ft8'].get('decoder', 'wsjtx')
+            
+            # If test file specified, override decoder to 'test'
+            if self.test_file:
+                decoder_type = 'test'
+                self.config['ft8']['test_file'] = self.test_file
+                logger.info(f"Using test mode with file: {self.test_file}")
+            
             self.ft8_decoder = create_decoder(decoder_type, self.config['ft8'])
             self.ft8_decoder.add_callback(self._on_decode)
             self.ft8_decoder.start()
@@ -315,6 +323,8 @@ def main():
                        help='Configuration file path')
     parser.add_argument('-v', '--verbose', action='store_true',
                        help='Verbose logging')
+    parser.add_argument('--test-file', type=str, default=None,
+                       help='Test mode: read FT8 decodes from file instead of WSJT-X log')
     parser.add_argument('--status', action='store_true',
                        help='Show status and exit')
     
@@ -332,7 +342,7 @@ def main():
     )
     
     # Create and run tracker
-    tracker = FT8Tracker(args.config)
+    tracker = FT8Tracker(args.config, test_file=args.test_file)
     
     if args.status:
         if tracker.start():

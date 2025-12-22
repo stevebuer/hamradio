@@ -1,0 +1,25 @@
+# FT8 Test Data File
+# Format: HHMMSS SNR DT FREQUENCY ~ MESSAGE
+# HHMMSS  = Time in UTC (hours, minutes, seconds)
+# SNR     = Signal-to-Noise Ratio in dB (negative or positive)
+# DT      = Time offset in seconds (usually small, e.g., -0.5 to +0.5)
+# FREQ    = Frequency in MHz for 40m band (7070-7100) or other HF bands
+# MESSAGE = FT8 message (CQ calls, responses, grid squares, etc.)
+#
+# Common FT8 frequencies:
+# 80m:  3573-3580 MHz
+# 60m:  5357 MHz (USB)
+# 40m:  7070-7100 MHz
+# 30m:  10130-10140 MHz
+# 20m:  14070-14100 MHz
+# 17m:  18100-18110 MHz
+# 15m:  21070-21100 MHz
+# 12m:  24915-24925 MHz
+# 10m:  28070-28100 MHz
+# 6m:   50313 MHz
+
+# Grid squares from various regions
+120400 -8 0.1 7070 ~ CQ N6 CM87
+#120410 +3 -0.1 7075 ~ N6 N7MKO DM09
+120420 -5 0.2 7080 ~ CQ W4 EM85
+#120430 -14 0.0 7073 ~ W4 K1ABC FN42
