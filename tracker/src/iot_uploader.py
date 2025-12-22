@@ -26,8 +26,8 @@ class IoTUploader:
         self.server_url = config.get('server', 'https://dx.jxqz.org')
         self.api_key = config.get('api_key', '')
         self.station = config.get('station', 'UNKNOWN')
-        self.upload_interval = config.get('upload_interval', 300)  # 5 minutes
-        self.batch_size = config.get('batch_size', 100)
+        self.upload_interval = int(config.get('upload_interval', 300))  # 5 minutes
+        self.batch_size = int(config.get('batch_size', 100))
         self.enabled = config.get('enabled', True)
         
         # Statistics

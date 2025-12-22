@@ -226,30 +226,48 @@ class Database:
             total_decodes = cursor.fetchone()['count']
             
             # Unique callsigns
+            if since_timestamp:
+                where_clause_callsigns = "WHERE timestamp >= ? AND callsign != ''"
+                params_callsigns = [since_timestamp]
+            else:
+                where_clause_callsigns = "WHERE callsign != ''"
+                params_callsigns = []
+            
             cursor.execute(f'''
                 SELECT COUNT(DISTINCT callsign) as count 
                 FROM decodes 
-                {where_clause}
-                AND callsign != ''
-            ''', params)
+                {where_clause_callsigns}
+            ''', params_callsigns)
             unique_callsigns = cursor.fetchone()['count']
             
             # Uploaded count
+            if since_timestamp:
+                where_clause_uploaded = "WHERE timestamp >= ? AND uploaded = 1"
+                params_uploaded = [since_timestamp]
+            else:
+                where_clause_uploaded = "WHERE uploaded = 1"
+                params_uploaded = []
+            
             cursor.execute(f'''
                 SELECT COUNT(*) as count 
                 FROM decodes 
-                {where_clause}
-                AND uploaded = 1
-            ''', params)
+                {where_clause_uploaded}
+            ''', params_uploaded)
             uploaded = cursor.fetchone()['count']
             
             # Bands worked
+            if since_timestamp:
+                where_clause_bands = "WHERE timestamp >= ? AND band != ''"
+                params_bands = [since_timestamp]
+            else:
+                where_clause_bands = "WHERE band != ''"
+                params_bands = []
+            
             cursor.execute(f'''
                 SELECT DISTINCT band 
                 FROM decodes 
-                {where_clause}
-                AND band != ''
-            ''', params)
+                {where_clause_bands}
+            ''', params_bands)
             bands = [row['band'] for row in cursor.fetchall()]
             
             return {

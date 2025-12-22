@@ -115,7 +115,8 @@ class GPSHandler:
             return False
             
         try:
-            self.session = gps.gps(mode=gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
+            self.session = gps.gps()
+            self.session.stream(gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
             self.running = True
             
             self.gps_thread = threading.Thread(target=self._gps_loop)

@@ -1,0 +1,4 @@
+tracker/data/tracker.db
+tracker/logs/tracker.log
+tracker/src/__pycache__/*
+beacon-server/venv

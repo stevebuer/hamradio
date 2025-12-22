@@ -22,8 +22,8 @@ class NetworkServer:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.host = config.get('server_bind', '0.0.0.0')
-        self.port = config.get('server_port', 8080)
-        self.http_port = config.get('http_port', 8081)
+        self.port = int(config.get('server_port', 8080))
+        self.http_port = int(config.get('http_port', 8081))
         self.running = False
         self.server_socket = None
         self.clients = []

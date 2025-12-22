@@ -65,7 +65,7 @@ class FT8Tracker:
     def _get_default_config(self) -> Dict[str, Any]:
         """Get default configuration"""
         return {
-            'gps': {'device': '/dev/ttyACM0', 'baud': '9600'},
+            'gps': {'enabled': 'false', 'device': '/dev/ttyACM0', 'baud': '9600'},
             'audio': {'device': 'hw:0,0', 'sample_rate': '12000'},
             'ft8': {
                 'decoder': 'wsjtx',
@@ -105,15 +105,20 @@ class FT8Tracker:
             logger.info(f"Database initialized: {db_path}")
             
             # Initialize GPS
-            logger.info("Initializing GPS...")
-            try:
-                self.gps_handler = GPSHandler(self.config['gps'])
-                if not self.gps_handler.start():
-                    logger.warning("GPS failed to start, using dummy GPS")
+            if self.config['gps'].get('enabled', 'true').lower() == 'true':
+                logger.info("Initializing GPS...")
+                try:
+                    self.gps_handler = GPSHandler(self.config['gps'])
+                    if not self.gps_handler.start():
+                        logger.warning("GPS failed to start, using dummy GPS")
+                        self.gps_handler = DummyGPS(self.config['gps'])
+                        self.gps_handler.start()
+                except Exception as e:
+                    logger.error(f"GPS error: {e}, using dummy GPS")
                     self.gps_handler = DummyGPS(self.config['gps'])
                     self.gps_handler.start()
-            except Exception as e:
-                logger.error(f"GPS error: {e}, using dummy GPS")
+            else:
+                logger.info("GPS disabled in config, using dummy GPS for external updates")
                 self.gps_handler = DummyGPS(self.config['gps'])
                 self.gps_handler.start()
                 
