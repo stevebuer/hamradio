@@ -231,6 +231,8 @@ class TestFileDecoder(FT8Decoder):
         self.delay = float(config.get('delay', '60.0'))  # Delay between decodes in seconds (default: 60s)
         self.initial_delay = float(config.get('initial_delay', '30.0'))  # Wait before first decode (default: 30s)
         self.follow_thread = None
+        self.wait_for_clients = config.get('wait_for_clients', 'false').lower() == 'true'
+        self.has_clients_callback = None  # Will be set by caller
         
     def start(self):
         """Start reading test file"""
@@ -248,8 +250,24 @@ class TestFileDecoder(FT8Decoder):
         """Read and process test file"""
         import time
         
-        # Wait before sending first decode (allows time to connect client)
-        if self.initial_delay > 0:
+        # Wait for client to connect if configured
+        if self.wait_for_clients and self.has_clients_callback:
+            logger.info("Waiting for SSE client to connect before starting decodes...")
+            check_count = 0
+            while self.running and not self.has_clients_callback():
+                time.sleep(0.5)
+                check_count += 1
+                if check_count % 4 == 0:  # Print every 2 seconds
+                    logger.debug("Still waiting for client connection...")
+            
+            if not self.running:
+                logger.info("Decoder stopped while waiting for client")
+                return
+            
+            logger.info("Client connected! Starting decode stream...")
+        
+        # Wait before sending first decode (allows time to connect client if not already waiting)
+        if self.initial_delay > 0 and not (self.wait_for_clients and self.has_clients_callback):
             logger.info(f"Waiting {self.initial_delay:.1f} seconds before sending first decode (time to connect client)...")
             time.sleep(self.initial_delay)
         
@@ -257,6 +275,18 @@ class TestFileDecoder(FT8Decoder):
             try:
                 with open(self.test_file, 'r') as f:
                     for line in f:
+                        if not self.running:
+                            break
+                        
+                        # If waiting for clients, check if any are still connected
+                        if self.wait_for_clients and self.has_clients_callback and not self.has_clients_callback():
+                            logger.debug("No clients connected, pausing decode stream...")
+                            # Keep checking until a client reconnects
+                            while self.running and not self.has_clients_callback():
+                                time.sleep(0.5)
+                            if self.running and self.has_clients_callback():
+                                logger.debug("Client reconnected, resuming decodes...")
+                            
                         if not self.running:
                             break
                             

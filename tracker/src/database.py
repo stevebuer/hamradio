@@ -98,6 +98,27 @@ class Database:
                 ON gps_positions(timestamp)
             ''')
             
+            # Create band changes table for tracking operating band changes
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS band_changes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timestamp INTEGER NOT NULL,
+                    band TEXT NOT NULL,
+                    source TEXT DEFAULT 'app',
+                    created_at INTEGER DEFAULT (strftime('%s', 'now'))
+                )
+            ''')
+            
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_band_changes_timestamp 
+                ON band_changes(timestamp)
+            ''')
+            
+            cursor.execute('''
+                CREATE INDEX IF NOT EXISTS idx_band_changes_band 
+                ON band_changes(band)
+            ''')
+            
             conn.commit()
             
         logger.info(f"Database initialized: {self.db_path}")
@@ -320,6 +341,69 @@ class Database:
             
         logger.info(f"Inserted GPS position {position_id} from {source}: {gps_data['latitude']}, {gps_data['longitude']}")
         return position_id
+    
+    def insert_band_change(self, band: str, source: str = 'app') -> int:
+        """Insert a band change record"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            
+            timestamp = int(datetime.now().timestamp())
+            
+            logger.debug(f"Inserting band change to database: band={band}, source={source}, timestamp={timestamp}")
+            
+            cursor.execute('''
+                INSERT INTO band_changes (
+                    timestamp, band, source
+                ) VALUES (?, ?, ?)
+            ''', (timestamp, band, source))
+            
+            conn.commit()
+            band_change_id = cursor.lastrowid
+            
+        logger.info(f"Band change recorded in database: ID={band_change_id}, band={band}, source={source}")
+        return band_change_id
+    
+    def get_band_changes(self, limit: int = 100, source: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get band change history, optionally filtered by source"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            
+            if source:
+                cursor.execute('''
+                    SELECT * FROM band_changes
+                    WHERE source = ?
+                    ORDER BY timestamp DESC
+                    LIMIT ?
+                ''', (source, limit))
+            else:
+                cursor.execute('''
+                    SELECT * FROM band_changes
+                    ORDER BY timestamp DESC
+                    LIMIT ?
+                ''', (limit,))
+            
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
+    
+    def get_bands_worked(self, since_timestamp: Optional[int] = None) -> List[str]:
+        """Get list of bands that have been changed to since given timestamp"""
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            
+            if since_timestamp:
+                cursor.execute('''
+                    SELECT DISTINCT band FROM band_changes
+                    WHERE timestamp >= ?
+                    ORDER BY band
+                ''', (since_timestamp,))
+            else:
+                cursor.execute('''
+                    SELECT DISTINCT band FROM band_changes
+                    ORDER BY band
+                ''')
+            
+            rows = cursor.fetchall()
+            return [row['band'] for row in rows]
     
     def get_latest_gps_position(self, source: Optional[str] = None) -> Optional[Dict[str, Any]]:
         """Get the most recent GPS position, optionally filtered by source"""

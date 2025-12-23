@@ -15,7 +15,7 @@ from typing import Dict, Any
 from ft8_decoder import create_decoder, FT8Decode
 from gps_handler import GPSHandler, DummyGPS, GPSPosition
 from database import Database
-from network_server import NetworkServer
+from network_server_flask import FlaskNetworkServer
 from iot_uploader import IoTUploader
 
 logger = logging.getLogger(__name__)
@@ -127,7 +127,7 @@ class FT8Tracker:
             
             # Initialize network server
             if self.config['network'].get('server_enabled', 'true').lower() == 'true':
-                self.network_server = NetworkServer(self.config['network'])
+                self.network_server = FlaskNetworkServer(self.config['network'])
                 # Register GPS callback to store external GPS updates
                 self.network_server.set_gps_callback(self._on_external_gps_update)
                 # Register band callback to store band changes
@@ -150,10 +150,18 @@ class FT8Tracker:
             if self.test_file:
                 decoder_type = 'test'
                 self.config['ft8']['test_file'] = self.test_file
+                # In test mode, wait for client to connect before processing decodes
+                self.config['ft8']['wait_for_clients'] = 'true'
                 logger.info(f"Using test mode with file: {self.test_file}")
             
             self.ft8_decoder = create_decoder(decoder_type, self.config['ft8'])
             self.ft8_decoder.add_callback(self._on_decode)
+            
+            # If test decoder with client waiting, set the callback
+            if decoder_type == 'test' and hasattr(self.ft8_decoder, 'has_clients_callback'):
+                self.ft8_decoder.has_clients_callback = self.network_server.has_clients
+                logger.debug("Set has_clients callback for test decoder")
+            
             self.ft8_decoder.start()
             logger.info(f"FT8 decoder started: {decoder_type}")
             
@@ -263,6 +271,17 @@ class FT8Tracker:
     def _on_band_change(self, band: str):
         """Handle band change from Android app"""
         logger.info(f"Band changed to: {band}")
+        logger.debug(f"Band change callback invoked for: {band}")
+        # Store band change in database
+        if self.database:
+            try:
+                logger.debug(f"Storing band change in database: {band}")
+                self.database.insert_band_change(band, source='app')
+                logger.debug(f"Band change stored successfully: {band}")
+            except Exception as e:
+                logger.error(f"Failed to record band change: {e}")
+        else:
+            logger.warning("Database not initialized, cannot record band change")
         # Band is stored in network_server.current_band and used in _on_decode()
         
     def get_status(self) -> Dict[str, Any]:

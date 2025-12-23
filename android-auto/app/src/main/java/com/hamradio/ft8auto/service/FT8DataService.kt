@@ -15,11 +15,10 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
-import java.net.Socket
 import java.net.URL
 
 /**
- * Background service that receives FT8 decode data from network or serial port
+ * Background service that receives FT8 decode data via HTTP Server-Sent Events (SSE)
  */
 class FT8DataService : Service() {
     
@@ -73,9 +72,10 @@ class FT8DataService : Service() {
         networkJob?.cancel()
         networkJob = serviceScope.launch {
             try {
-                connectToNetworkSource(host, port)
+                connectToSSEStream(host, port)
             } catch (e: Exception) {
                 e.printStackTrace()
+                updateNotification("Connection failed, retrying...")
                 // Retry after delay
                 delay(5000)
                 if (isActive) {
@@ -85,28 +85,52 @@ class FT8DataService : Service() {
         }
     }
     
-    private suspend fun connectToNetworkSource(host: String, port: Int) {
+    private suspend fun connectToSSEStream(host: String, port: Int) {
         withContext(Dispatchers.IO) {
-            var socket: Socket? = null
+            var connection: HttpURLConnection? = null
             try {
-                socket = Socket(host, port)
-                
                 // Send band information as part of connect sequence
                 sendBandInformation(host, port)
                 
-                val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
+                val url = URL("http://$host:$port/decodes")
+                connection = url.openConnection() as HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.setRequestProperty("Accept", "text/event-stream")
+                connection.connectTimeout = 10000
+                connection.readTimeout = 0  // No timeout for streaming
+                
+                val responseCode = connection.responseCode
+                if (responseCode != 200) {
+                    throw Exception("HTTP error $responseCode")
+                }
                 
                 updateNotification("Connected to $host:$port")
                 
+                val reader = BufferedReader(InputStreamReader(connection.inputStream))
+                
                 while (isActive) {
                     val line = reader.readLine() ?: break
-                    processLine(line)
+                    
+                    // Parse SSE format: "data: {json}"
+                    if (line.startsWith("data: ")) {
+                        try {
+                            val jsonStr = line.substring(6)
+                            val json = JSONObject(jsonStr)
+                            val decode = json.optString("decode")
+                            if (decode.isNotEmpty()) {
+                                processLine(decode)
+                            }
+                        } catch (e: Exception) {
+                            android.util.Log.e("FT8DataService", "Error parsing SSE: ${e.message}")
+                        }
+                    }
+                    // Skip keepalive and empty lines
                 }
             } catch (e: Exception) {
                 updateNotification("Connection failed: ${e.message}")
                 throw e
             } finally {
-                socket?.close()
+                connection?.disconnect()
             }
         }
     }
@@ -145,7 +169,6 @@ class FT8DataService : Service() {
             android.util.Log.w("FT8DataService", "Failed to send band information: ${e.message}")
         }
     }
-    
     
     private fun processLine(line: String) {
         val decode = FT8Parser.parse(line)

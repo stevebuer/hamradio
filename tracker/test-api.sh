@@ -7,7 +7,7 @@ set -e
 
 # Configuration
 DEFAULT_HOST="127.0.0.1"
-DEFAULT_PORT="8080"
+DEFAULT_PORT="8080"  # Single REST API port for all endpoints
 
 # Colors for output
 RED='\033[0;31m'

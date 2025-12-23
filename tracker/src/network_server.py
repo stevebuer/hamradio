@@ -25,6 +25,8 @@ class NetworkServer:
         self.config = config
         self.host = config.get('server_bind', '0.0.0.0')
         self.port = int(config.get('server_port', 8080))
+        # HTTP server uses same port by default, but can be overridden
+        self.http_port = int(config.get('server_http_port', self.port))
         self.running = False
         self.server_socket = None
         self.clients = []
@@ -64,7 +66,10 @@ class NetworkServer:
             
             logger.info(f"Network server started on {self.host}:{self.port}")
             logger.info(f"  TCP stream for FT8 decodes on {self.host}:{self.port}")
-            logger.info(f"  HTTP endpoints (/gps, /band) on {self.host}:{self.port}")
+            if self.http_port != self.port:
+                logger.info(f"  HTTP endpoints (/gps, /band) on {self.host}:{self.http_port}")
+            else:
+                logger.info(f"  HTTP endpoints (/gps, /band) on {self.host}:{self.http_port}")
             return True
             
         except Exception as e:
@@ -245,6 +250,8 @@ class NetworkServer:
                         
                         band = band_data['band']
                         
+                        logger.debug(f"Received band change request: {band}")
+                        
                         # Validate band format (e.g., "40m", "20m", "15m")
                         valid_bands = ['80m', '60m', '40m', '30m', '20m', '17m', '15m', '12m', '10m', '6m']
                         if band not in valid_bands:
@@ -253,9 +260,11 @@ class NetworkServer:
                         
                         # Store current band
                         parent.current_band = band
+                        logger.debug(f"Band stored in network server: {band}")
                         
                         # Call callback if registered
                         if parent.band_callback:
+                            logger.debug(f"Calling band callback for: {band}")
                             try:
                                 parent.band_callback(band)
                             except Exception as e:
@@ -295,10 +304,22 @@ class NetworkServer:
                     self.send_error(404, "Not found")
         
         try:
-            self.http_server = HTTPServer((self.host, self.port), GPSRequestHandler)
+            # Create HTTP server with REUSEADDR to allow binding to same port
+            logger.debug(f"Attempting to start HTTP server on {self.host}:{self.http_port}")
+            self.http_server = HTTPServer((self.host, self.http_port), GPSRequestHandler)
+            # Allow reuse of the address
+            self.http_server.allow_reuse_address = True
+            logger.debug(f"Starting HTTP server on {self.host}:{self.http_port}")
             self.http_thread = threading.Thread(target=self.http_server.serve_forever)
             self.http_thread.daemon = True
             self.http_thread.start()
+            logger.info(f"HTTP server started successfully on {self.host}:{self.http_port}")
+        except OSError as e:
+            if "Address already in use" in str(e):
+                logger.error(f"Failed to start HTTP server on {self.http_port}: Port already in use.")
+                logger.warning("HTTP endpoints (/gps, /band) will not be available")
+            else:
+                logger.error(f"Failed to start HTTP server: {e}")
         except Exception as e:
             logger.error(f"Failed to start HTTP server: {e}")
 
