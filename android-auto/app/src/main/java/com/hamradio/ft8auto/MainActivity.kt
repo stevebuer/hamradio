@@ -209,7 +209,7 @@ class MainActivity : AppCompatActivity() {
             if (isChecked) {
                 // Start GPS upload service
                 val host = hostEditText.text.toString()
-                GPSUploadService.start(this, host, port = 8081, intervalSeconds = 30)
+                GPSUploadService.start(this, host, port = 8080, intervalSeconds = 30)
             } else {
                 // Stop GPS upload service
                 GPSUploadService.stop(this)

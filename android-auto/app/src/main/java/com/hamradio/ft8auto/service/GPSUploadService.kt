@@ -23,7 +23,7 @@ class GPSUploadService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
     private var trackerHost: String = ""
-    private var trackerPort: Int = 8081
+    private var trackerPort: Int = 8080
     private var uploadInterval: Long = 30000 // 30 seconds default
     
     companion object {
@@ -37,7 +37,7 @@ class GPSUploadService : Service() {
         const val EXTRA_PORT = "port"
         const val EXTRA_INTERVAL = "interval"
         
-        fun start(context: Context, host: String, port: Int = 8081, intervalSeconds: Int = 30) {
+        fun start(context: Context, host: String, port: Int = 8080, intervalSeconds: Int = 30) {
             val intent = Intent(context, GPSUploadService::class.java).apply {
                 action = ACTION_START
                 putExtra(EXTRA_HOST, host)
@@ -70,7 +70,7 @@ class GPSUploadService : Service() {
         when (intent?.action) {
             ACTION_START -> {
                 trackerHost = intent.getStringExtra(EXTRA_HOST) ?: ""
-                trackerPort = intent.getIntExtra(EXTRA_PORT, 8081)
+                trackerPort = intent.getIntExtra(EXTRA_PORT, 8080)
                 val intervalSeconds = intent.getIntExtra(EXTRA_INTERVAL, 30)
                 uploadInterval = intervalSeconds * 1000L
                 

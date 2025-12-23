@@ -1,0 +1,482 @@
+openapi: 3.0.0
+info:
+  title: FT8 Tracker API
+  description: |
+    REST API for FT8 (Frequency Shift Keying 8-tone) radio decode tracking and GPS position sharing.
+    
+    The API provides:
+    - TCP stream of real-time FT8 decode data
+    - HTTP endpoints for GPS position updates and band changes
+    - Server health monitoring
+    
+    All HTTP endpoints use port 8080 (same as TCP stream).
+  version: 1.0.0
+  contact:
+    name: FT8 Tracker Project
+    url: https://github.com/yourusername/hamradio
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Local development server
+  - url: http://{host}:8080
+    description: Remote tracker server
+    variables:
+      host:
+        default: 192.168.1.100
+        description: IP address or hostname of the tracker server
+
+tags:
+  - name: TCP Stream
+    description: Raw TCP socket connection for real-time decode streaming
+  - name: GPS
+    description: GPS position updates from mobile device
+  - name: Band
+    description: Operating band selection
+  - name: Health
+    description: Server status and monitoring
+
+paths:
+  /:
+    get:
+      summary: TCP Stream Connection
+      description: |
+        Establish a TCP socket connection to receive real-time FT8 decode data.
+        
+        Connection details:
+        - Protocol: TCP/IPv4
+        - Port: 8080
+        - Format: Line-delimited plaintext
+        - Data: FT8 decode strings (see schema below)
+        
+        Example connection with netcat:
+        ```
+        nc <host> 8080
+        ```
+        
+        Example connection with Python:
+        ```python
+        import socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect(('192.168.1.100', 8080))
+        while True:
+            line = sock.recv(1024).decode('utf-8')
+            print(line)
+        ```
+      tags:
+        - TCP Stream
+      responses:
+        '200':
+          description: Connected to TCP stream
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: |
+                  # FT8 Tracker - Connected at 2025-12-22 14:30:45.123456
+                  143045 -12  0.3 1234 ~ CQ N7MKO FN42
+                  143047 -15  0.1 1235 ~ K1ABC N7MKO +03
+                  143049 -10  0.2 1236 ~ N7MKO K1ABC RRR
+
+  /gps:
+    post:
+      summary: Upload GPS Position
+      description: |
+        Submit current GPS position from mobile device to tracker server.
+        Updates the last known position for the station.
+      tags:
+        - GPS
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - latitude
+                - longitude
+              properties:
+                latitude:
+                  type: number
+                  format: double
+                  minimum: -90
+                  maximum: 90
+                  description: Latitude in decimal degrees
+                  example: 40.7128
+                longitude:
+                  type: number
+                  format: double
+                  minimum: -180
+                  maximum: 180
+                  description: Longitude in decimal degrees
+                  example: -74.0060
+                timestamp:
+                  type: integer
+                  format: int64
+                  description: Unix timestamp (seconds since epoch). Optional - server will add if missing.
+                  example: 1703254245
+                altitude:
+                  type: number
+                  format: double
+                  description: Altitude in meters above sea level. Optional.
+                  example: 50.5
+                accuracy:
+                  type: number
+                  format: double
+                  description: Horizontal accuracy in meters. Optional.
+                  example: 10.0
+                source:
+                  type: string
+                  description: Source of GPS data. Optional.
+                  enum:
+                    - android_auto
+                    - ios
+                    - web
+                    - gps_device
+                  example: android_auto
+            examples:
+              minimal:
+                summary: Minimal GPS update
+                value:
+                  latitude: 40.7128
+                  longitude: -74.0060
+              complete:
+                summary: Complete GPS update with all fields
+                value:
+                  latitude: 40.7128
+                  longitude: -74.0060
+                  timestamp: 1703254245
+                  altitude: 50.5
+                  accuracy: 10.0
+                  source: android_auto
+      responses:
+        '200':
+          description: GPS position received successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                  message:
+                    type: string
+                example:
+                  status: ok
+                  message: GPS position received
+        '400':
+          description: Invalid request (missing required fields or invalid format)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [error]
+                  message:
+                    type: string
+              examples:
+                missing_lat:
+                  summary: Missing latitude
+                  value:
+                    status: error
+                    message: Missing latitude or longitude
+                invalid_json:
+                  summary: Invalid JSON
+                  value:
+                    status: error
+                    message: Invalid JSON
+        '413':
+          description: Payload too large (exceeds 10KB limit)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [error]
+                  message:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [error]
+                  message:
+                    type: string
+
+  /band:
+    post:
+      summary: Update Operating Band
+      description: |
+        Notify tracker of current operating frequency band.
+        Used for filtering and organizing FT8 decodes by band.
+      tags:
+        - Band
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - band
+              properties:
+                band:
+                  type: string
+                  description: Operating band designation
+                  enum:
+                    - 80m
+                    - 60m
+                    - 40m
+                    - 30m
+                    - 20m
+                    - 17m
+                    - 15m
+                    - 12m
+                    - 10m
+                    - 6m
+                  example: 20m
+            example:
+              band: 20m
+      responses:
+        '200':
+          description: Band update received successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                  message:
+                    type: string
+              example:
+                status: ok
+                message: Band set to 20m
+        '400':
+          description: Invalid request (missing band field or invalid band)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [error]
+                  message:
+                    type: string
+              examples:
+                missing_band:
+                  summary: Missing band field
+                  value:
+                    status: error
+                    message: Missing band field
+                invalid_band:
+                  summary: Invalid band value
+                  value:
+                    status: error
+                    message: Invalid band. Must be one of: 80m, 60m, 40m, 30m, 20m, 17m, 15m, 12m, 10m, 6m
+        '413':
+          description: Payload too large (exceeds 1KB limit)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [error]
+                  message:
+                    type: string
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [error]
+                  message:
+                    type: string
+
+  /health:
+    get:
+      summary: Server Health Check
+      description: |
+        Check server status and get information about last GPS position and current band.
+        Useful for monitoring and debugging connectivity.
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Server is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+                  last_gps:
+                    type: object
+                    nullable: true
+                    description: Last received GPS position (null if never received)
+                    properties:
+                      latitude:
+                        type: number
+                        format: double
+                      longitude:
+                        type: number
+                        format: double
+                      timestamp:
+                        type: integer
+                        format: int64
+                      altitude:
+                        type: number
+                        format: double
+                        nullable: true
+                      accuracy:
+                        type: number
+                        format: double
+                        nullable: true
+                  current_band:
+                    type: string
+                    nullable: true
+                    description: Currently selected band (null if not set)
+              examples:
+                with_gps:
+                  summary: Server with GPS and band data
+                  value:
+                    status: ok
+                    last_gps:
+                      latitude: 40.7128
+                      longitude: -74.0060
+                      timestamp: 1703254245
+                      altitude: 50.5
+                      accuracy: 10.0
+                    current_band: 20m
+                no_gps:
+                  summary: Server without GPS data yet
+                  value:
+                    status: ok
+                    last_gps: null
+                    current_band: null
+
+components:
+  schemas:
+    GPSPosition:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: number
+          format: double
+          minimum: -90
+          maximum: 90
+          description: Latitude in decimal degrees
+        longitude:
+          type: number
+          format: double
+          minimum: -180
+          maximum: 180
+          description: Longitude in decimal degrees
+        timestamp:
+          type: integer
+          format: int64
+          description: Unix timestamp (seconds since epoch)
+        altitude:
+          type: number
+          format: double
+          nullable: true
+          description: Altitude in meters above sea level
+        accuracy:
+          type: number
+          format: double
+          nullable: true
+          description: Horizontal accuracy radius in meters
+        source:
+          type: string
+          description: Source identifier for the GPS data
+
+    FT8Decode:
+      type: object
+      description: Single FT8 radio decode result
+      properties:
+        time:
+          type: string
+          pattern: '^\d{6}$'
+          description: UTC time in HHMMSS format
+          example: "143045"
+        db:
+          type: integer
+          description: Signal-to-noise ratio in dB
+          example: -12
+        dt:
+          type: number
+          format: double
+          description: Time offset in seconds
+          example: 0.3
+        freq:
+          type: integer
+          description: Frequency in Hz relative to band center
+          example: 1234
+        mode:
+          type: string
+          description: Decode mode indicator
+          enum: ['~', '+', '#']
+          example: '~'
+        message:
+          type: string
+          description: Decoded FT8 message
+          example: "CQ N7MKO FN42"
+
+    SuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        message:
+          type: string
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+        message:
+          type: string
+
+    HealthCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        last_gps:
+          $ref: '#/components/schemas/GPSPosition'
+          nullable: true
+        current_band:
+          type: string
+          nullable: true
+
+externalDocs:
+  description: FT8 Tracker Project Documentation
+  url: https://github.com/yourusername/hamradio/tree/main/tracker

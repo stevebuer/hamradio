@@ -1,7 +1,9 @@
 """
 Network Server
-TCP server that sends FT8 decodes to Android Auto app
-Also receives GPS position updates via HTTP endpoint
+Combined TCP+HTTP server that:
+- Sends FT8 decodes to Android Auto app via TCP stream
+- Receives GPS position updates via HTTP POST /gps endpoint
+- Receives band changes via HTTP POST /band endpoint
 """
 
 import socket
@@ -17,13 +19,12 @@ logger = logging.getLogger(__name__)
 
 
 class NetworkServer:
-    """TCP server for sending decodes to Android Auto app"""
+    """Combined TCP+HTTP server for decodes and GPS updates"""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.host = config.get('server_bind', '0.0.0.0')
         self.port = int(config.get('server_port', 8080))
-        self.http_port = int(config.get('http_port', 8081))
         self.running = False
         self.server_socket = None
         self.clients = []
@@ -38,7 +39,7 @@ class NetworkServer:
         self.current_band: Optional[str] = None
         
     def start(self):
-        """Start the TCP server"""
+        """Start the combined TCP+HTTP server"""
         try:
             self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -58,11 +59,12 @@ class NetworkServer:
             self.broadcast_thread.daemon = True
             self.broadcast_thread.start()
             
-            # Start HTTP server for GPS updates
+            # Start HTTP server on same port for GPS/band updates
             self._start_http_server()
             
             logger.info(f"Network server started on {self.host}:{self.port}")
-            logger.info(f"HTTP GPS endpoint started on {self.host}:{self.http_port}")
+            logger.info(f"  TCP stream for FT8 decodes on {self.host}:{self.port}")
+            logger.info(f"  HTTP endpoints (/gps, /band) on {self.host}:{self.port}")
             return True
             
         except Exception as e:
@@ -170,18 +172,18 @@ class NetworkServer:
         return self.last_gps_update
     
     def _start_http_server(self):
-        """Start HTTP server for GPS updates"""
+        """Start HTTP server on same port as TCP for GPS/band updates"""
         parent = self
         
         class GPSRequestHandler(BaseHTTPRequestHandler):
-            """Handle HTTP GPS update requests"""
+            """Handle HTTP requests for GPS updates and band changes"""
             
             def log_message(self, format, *args):
                 """Override to use our logger"""
                 logger.debug(format % args)
             
             def do_POST(self):
-                """Handle POST request for GPS update"""
+                """Handle POST request for GPS update or band change"""
                 if self.path == '/gps':
                     try:
                         content_length = int(self.headers.get('Content-Length', 0))
@@ -293,7 +295,7 @@ class NetworkServer:
                     self.send_error(404, "Not found")
         
         try:
-            self.http_server = HTTPServer((self.host, self.http_port), GPSRequestHandler)
+            self.http_server = HTTPServer((self.host, self.port), GPSRequestHandler)
             self.http_thread = threading.Thread(target=self.http_server.serve_forever)
             self.http_thread.daemon = True
             self.http_thread.start()
