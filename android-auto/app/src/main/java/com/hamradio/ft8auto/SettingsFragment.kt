@@ -15,6 +15,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import com.google.android.material.switchmaterial.SwitchMaterial
+import com.hamradio.ft8auto.model.FT8DecodeManager
 import com.hamradio.ft8auto.service.FT8DataService
 import com.hamradio.ft8auto.service.GPSUploadService
 import com.hamradio.ft8auto.util.PreferencesManager
@@ -31,6 +32,8 @@ class SettingsFragment : Fragment() {
     private lateinit var disconnectButton: Button
     private lateinit var testConnectionButton: Button
     private lateinit var resetButton: Button
+    private lateinit var clearDecodesButton: Button
+    private lateinit var exportButton: Button
     
     private lateinit var unitsSwitch: SwitchMaterial
     private lateinit var gpsUploadSwitch: SwitchMaterial
@@ -59,6 +62,8 @@ class SettingsFragment : Fragment() {
         disconnectButton = view.findViewById(R.id.settingsDisconnectButton)
         testConnectionButton = view.findViewById(R.id.testConnectionButton)
         resetButton = view.findViewById(R.id.resetButton)
+        clearDecodesButton = view.findViewById(R.id.clearDecodesButton)
+        exportButton = view.findViewById(R.id.exportButton)
         
         unitsSwitch = view.findViewById(R.id.settingsUnitsSwitch)
         gpsUploadSwitch = view.findViewById(R.id.settingsGpsUploadSwitch)
@@ -123,6 +128,14 @@ class SettingsFragment : Fragment() {
         
         resetButton.setOnClickListener {
             resetToDefaults()
+        }
+        
+        clearDecodesButton.setOnClickListener {
+            clearDecodes()
+        }
+        
+        exportButton.setOnClickListener {
+            exportDecodes()
         }
         
         unitsSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -267,6 +280,32 @@ class SettingsFragment : Fragment() {
         }
         builder.setNegativeButton("Cancel", null)
         builder.show()
+    }
+
+    private fun clearDecodes() {
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("Clear All Decodes?")
+        builder.setMessage("This will remove all FT8 decode markers from the map. Continue?")
+        builder.setPositiveButton("Yes") { _, _ ->
+            FT8DecodeManager.getInstance().clearDecodes()
+            
+            android.widget.Toast.makeText(
+                requireContext(),
+                "Decodes cleared from map",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+        builder.setNegativeButton("Cancel", null)
+        builder.show()
+    }
+
+    private fun exportDecodes() {
+        // TODO: Implement export functionality
+        android.widget.Toast.makeText(
+            requireContext(),
+            "Export feature coming soon",
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
     }
 
     

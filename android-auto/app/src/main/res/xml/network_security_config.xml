@@ -1,10 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
+    <!-- Allow cleartext traffic only for local development servers -->
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">10.0.0.67</domain>
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
     </domain-config>
+    
+    <!-- Allow HTTP and HTTPS traffic to OpenStreetMap tile servers -->
+    <!-- These servers serve tiles over both HTTP and HTTPS -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">tile.openstreetmap.org</domain>
+        <domain includeSubdomains="true">a.tile.openstreetmap.org</domain>
+        <domain includeSubdomains="true">b.tile.openstreetmap.org</domain>
+        <domain includeSubdomains="true">c.tile.openstreetmap.org</domain>
+        <domain includeSubdomains="true">tiles.openstreetmap.org</domain>
+        <domain includeSubdomains="true">server.arcgisonline.com</domain>
+        <domain includeSubdomains="true">cartodb-basemaps-a.global.ssl.fastly.net</domain>
+        <domain includeSubdomains="true">cartodb-basemaps-b.global.ssl.fastly.net</domain>
+        <domain includeSubdomains="true">cartodb-basemaps-c.global.ssl.fastly.net</domain>
+    </domain-config>
+    
+    <!-- Allow HTTPS-only tile providers -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">maps.geoapify.com</domain>
+        <domain includeSubdomains="true">api.mapbox.com</domain>
+        <domain includeSubdomains="true">tiles.stadiamaps.com</domain>
+    </domain-config>
+    
+    <!-- Default policy: allow network access -->
+    <default-domain-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </default-domain-config>
     
     <debug-overrides>
         <trust-anchors>

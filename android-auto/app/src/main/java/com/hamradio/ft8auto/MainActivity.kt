@@ -145,6 +145,10 @@ class MainActivity : AppCompatActivity() {
             }
         }
         
+        // Keep all fragments in memory to prevent destruction/recreation
+        // This prevents the MapFragment from being destroyed when switching tabs
+        viewPager.offscreenPageLimit = 2
+        
         // Link TabLayout with ViewPager2
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             tab.text = when (position) {

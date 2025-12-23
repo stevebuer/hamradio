@@ -6,6 +6,7 @@ import android.preference.PreferenceManager
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.hamradio.ft8auto.model.FT8Decode
 import com.hamradio.ft8auto.model.FT8DecodeManager
@@ -47,11 +48,33 @@ class MapFragment : Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Configure osmdroid
-        Configuration.getInstance().load(
+        android.util.Log.i("MapFragment", "onCreate called")
+        Toast.makeText(requireContext(), "MapFragment.onCreate", Toast.LENGTH_SHORT).show()
+        
+        // Configure osmdroid BEFORE anything else
+        val config = Configuration.getInstance()
+        
+        // Load from preferences
+        config.load(
             requireContext(),
             PreferenceManager.getDefaultSharedPreferences(requireContext())
         )
+        
+        // Set cache directory
+        val cacheDir = requireContext().cacheDir
+        config.osmdroidBasePath = cacheDir
+        config.osmdroidTileCache = java.io.File(cacheDir, "osmdroid").also { it.mkdirs() }
+        
+        // Tile loading configuration
+        config.tileDownloadThreads = 8
+        config.userAgentValue = "FT8AutoDisplay/1.0 (Android) osmdroid"
+        
+        // Network configuration for tile loading
+        config.isDebugMode = true  // Enable debug to see tile loading info
+        
+        android.util.Log.i("MapFragment", "osmdroid configured with cache: ${config.osmdroidTileCache}")
+        android.util.Log.i("MapFragment", "Debug mode: ${config.isDebugMode}")
+        android.util.Log.i("MapFragment", "User agent: ${config.userAgentValue}")
     }
     
     override fun onCreateView(
@@ -59,40 +82,130 @@ class MapFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        mapView = MapView(requireContext()).apply {
-            setTileSource(TileSourceFactory.MAPNIK)
-            setMultiTouchControls(true)
-            
-            // Set default zoom and center (will update with user location)
-            controller.setZoom(4.0)
-            controller.setCenter(GeoPoint(39.8283, -98.5795)) // Center of USA
-            
-            // Add user location overlay
-            myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(requireContext()), this)
-            myLocationOverlay?.enableMyLocation()
-            myLocationOverlay?.enableFollowLocation()
-            overlays.add(myLocationOverlay)
-        }
-        
-        return mapView
+        return inflater.inflate(R.layout.fragment_map, container, false)
     }
     
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         
-        // Mark map as ready
-        isMapReady = true
+        android.util.Log.i("MapFragment", "onViewCreated called")
+        Toast.makeText(requireContext(), "MapFragment.onViewCreated", Toast.LENGTH_SHORT).show()
         
-        // Add decode listener
-        decodeManager.addListener(decodeListener)
-        
-        // Initial map update
-        updateMap()
+        try {
+            // Get the MapView from the layout
+            mapView = view.findViewById(R.id.mapView)
+            android.util.Log.i("MapFragment", "MapView found from layout: ${mapView != null}")
+            
+            mapView?.let { map ->
+                Toast.makeText(requireContext(), "Initializing map...", Toast.LENGTH_SHORT).show()
+                
+                // Set tile source - MAPNIK is the default OpenStreetMap tiles
+                val tileSource = TileSourceFactory.MAPNIK
+                map.setTileSource(tileSource)
+                android.util.Log.i("MapFragment", "Tile source set to: ${tileSource.name()}")
+                
+                map.setMultiTouchControls(true)
+                map.setUseDataConnection(true) // Important: allow network tile downloads
+                map.isVerticalMapRepetitionEnabled = false
+                android.util.Log.i("MapFragment", "Data connection enabled for tiles")
+                
+                // Set default zoom and center (will update with user location)
+                map.controller.setZoom(4.0)
+                map.controller.setCenter(GeoPoint(39.8283, -98.5795)) // Center of USA
+                
+                // Add user location overlay
+                myLocationOverlay = MyLocationNewOverlay(GpsMyLocationProvider(requireContext()), map)
+                myLocationOverlay?.enableMyLocation()
+                myLocationOverlay?.enableFollowLocation()
+                map.overlays.add(myLocationOverlay)
+                
+                android.util.Log.i("MapFragment", "MapView initialized successfully from layout")
+                Toast.makeText(requireContext(), "Map initialized!", Toast.LENGTH_SHORT).show()
+                
+                // Mark map as ready
+                isMapReady = true
+                
+                // Add decode listener
+                decodeManager.addListener(decodeListener)
+                
+                // Initial map update
+                updateMap()
+                
+                // Force a refresh after a short delay to ensure tiles have started loading
+                view.postDelayed({
+                    android.util.Log.i("MapFragment", "Triggering deferred map refresh")
+                    map.invalidate()
+                    updateMap()
+                }, 500)
+                
+                android.util.Log.i("MapFragment", "Map setup complete, isMapReady=$isMapReady")
+            } ?: run {
+                android.util.Log.e("MapFragment", "Failed to find MapView in layout with ID R.id.mapView")
+                Toast.makeText(requireContext(), "ERROR: MapView not found!", Toast.LENGTH_LONG).show()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("MapFragment", "Error initializing MapView: ${e.message}", e)
+            e.printStackTrace()
+            Toast.makeText(requireContext(), "ERROR: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
     
     override fun onResume() {
         super.onResume()
         mapView?.onResume()
+        
+        // Restart tile loading when coming back to this fragment
+        mapView?.let { map ->
+            try {
+                android.util.Log.i("MapFragment", "onResume called: attempting tile refresh")
+                Toast.makeText(requireContext(), "Map resumed - reloading tiles", Toast.LENGTH_SHORT).show()
+                
+                // Ensure data connection is enabled
+                map.setUseDataConnection(true)
+                android.util.Log.i("MapFragment", "Data connection enabled")
+                
+                // Clear the tile cache to force fresh tiles
+                try {
+                    android.util.Log.i("MapFragment", "Clearing tile cache")
+                    map.tileProvider.clearTileCache()
+                    android.util.Log.i("MapFragment", "Tile cache cleared")
+                } catch (e: Exception) {
+                    android.util.Log.w("MapFragment", "Could not clear tile cache: ${e.message}")
+                }
+                
+                // Reset tile source (don't detach, just re-set)
+                val tileSource = TileSourceFactory.MAPNIK
+                map.setTileSource(tileSource)
+                android.util.Log.i("MapFragment", "Tile source reset to: ${tileSource.name()}")
+                
+                // Trigger map refresh with multiple invalidations
+                android.util.Log.i("MapFragment", "Starting tile refresh")
+                map.invalidate()
+                
+                // Multiple staggered invalidations
+                map.postDelayed({
+                    android.util.Log.i("MapFragment", "Refresh step 1")
+                    map.invalidate()
+                }, 100)
+                
+                map.postDelayed({
+                    android.util.Log.i("MapFragment", "Refresh step 2")
+                    map.invalidate()
+                }, 300)
+                
+                map.postDelayed({
+                    android.util.Log.i("MapFragment", "Refresh step 3 - calling updateMap")
+                    updateMap()
+                    map.invalidate()
+                }, 500)
+                
+                android.util.Log.i("MapFragment", "onResume refresh complete")
+            } catch (e: Exception) {
+                android.util.Log.e("MapFragment", "Error in onResume: ${e.message}", e)
+                e.printStackTrace()
+                Toast.makeText(requireContext(), "ERROR: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
     }
     
     override fun onPause() {
@@ -118,6 +231,9 @@ class MapFragment : Fragment() {
             val activity = activity as? MainActivity ?: return
             val myLat = activity.getCurrentLatitude()
             val myLon = activity.getCurrentLongitude()
+            
+            // Ensure tiles are being requested
+            map.setUseDataConnection(true)
             
             // Remove markers for decodes that are no longer in the list
             val currentCallsigns = decodes.map { it.callsign }.toSet()
@@ -170,8 +286,7 @@ class MapFragment : Fragment() {
                                 map.overlays.add(marker)
                                 stationMarkers[decode.callsign] = marker
                             } catch (e: Exception) {
-                                // Silently fail if marker creation fails (MapView might not be ready)
-                                android.util.Log.d("MapFragment", "Failed to create marker: ${e.message}")
+                                android.util.Log.e("MapFragment", "Failed to create marker: ${e.message}", e)
                             }
                         } else {
                             // Update existing marker
@@ -186,16 +301,17 @@ class MapFragment : Fragment() {
                                 
                                 existingMarker.snippet = "${decode.grid} | SNR: ${decode.snr}dB$distance\n${decode.message}"
                             } catch (e: Exception) {
-                                android.util.Log.d("MapFragment", "Failed to update marker: ${e.message}")
+                                android.util.Log.e("MapFragment", "Failed to update marker: ${e.message}", e)
                             }
                         }
                     }
                 }
             }
             
+            // Force map redraw with tile refresh
             map.invalidate()
         } catch (e: Exception) {
-            android.util.Log.e("MapFragment", "Error updating map: ${e.message}")
+            android.util.Log.e("MapFragment", "Error updating map: ${e.message}", e)
             e.printStackTrace()
         }
     }
