@@ -8,10 +8,15 @@ import androidx.core.app.NotificationCompat
 import com.hamradio.ft8auto.MainActivity
 import com.hamradio.ft8auto.model.FT8DecodeManager
 import com.hamradio.ft8auto.parser.FT8Parser
+import com.hamradio.ft8auto.util.PreferencesManager
 import kotlinx.coroutines.*
+import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
 import java.net.Socket
+import java.net.URL
 
 /**
  * Background service that receives FT8 decode data from network or serial port
@@ -22,18 +27,15 @@ class FT8DataService : Service() {
     private val decodeManager = FT8DecodeManager.getInstance()
     
     private var networkJob: Job? = null
-    private var serialJob: Job? = null
     
     companion object {
         private const val NOTIFICATION_ID = 1001
         private const val CHANNEL_ID = "FT8DataChannel"
         const val ACTION_START_NETWORK = "com.hamradio.ft8auto.START_NETWORK"
-        const val ACTION_START_SERIAL = "com.hamradio.ft8auto.START_SERIAL"
         const val ACTION_STOP = "com.hamradio.ft8auto.STOP"
         
         const val EXTRA_HOST = "host"
         const val EXTRA_PORT = "port"
-        const val EXTRA_SERIAL_DEVICE = "serial_device"
     }
     
     override fun onCreate() {
@@ -47,12 +49,6 @@ class FT8DataService : Service() {
                 val host = intent.getStringExtra(EXTRA_HOST) ?: "localhost"
                 val port = intent.getIntExtra(EXTRA_PORT, 8080)
                 startNetworkReceiver(host, port)
-            }
-            ACTION_START_SERIAL -> {
-                val device = intent.getStringExtra(EXTRA_SERIAL_DEVICE)
-                if (device != null) {
-                    startSerialReceiver(device)
-                }
             }
             ACTION_STOP -> {
                 stopSelf()
@@ -70,7 +66,6 @@ class FT8DataService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         networkJob?.cancel()
-        serialJob?.cancel()
         serviceScope.cancel()
     }
     
@@ -95,6 +90,10 @@ class FT8DataService : Service() {
             var socket: Socket? = null
             try {
                 socket = Socket(host, port)
+                
+                // Send band information as part of connect sequence
+                sendBandInformation(host, port)
+                
                 val reader = BufferedReader(InputStreamReader(socket.getInputStream()))
                 
                 updateNotification("Connected to $host:$port")
@@ -112,26 +111,41 @@ class FT8DataService : Service() {
         }
     }
     
-    private fun startSerialReceiver(device: String) {
-        serialJob?.cancel()
-        serialJob = serviceScope.launch {
-            try {
-                connectToSerialPort(device)
-            } catch (e: Exception) {
-                e.printStackTrace()
-                updateNotification("Serial error: ${e.message}")
+    private suspend fun sendBandInformation(host: String, port: Int) {
+        try {
+            val band = PreferencesManager.getCurrentBand()
+            if (band.isEmpty() || band == "Select Band") {
+                return  // Skip if no band selected
             }
+            
+            val url = URL("http://$host:$port/band")
+            val connection = url.openConnection() as HttpURLConnection
+            
+            connection.requestMethod = "POST"
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.doOutput = true
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+            
+            val jsonData = JSONObject().apply {
+                put("band", band)
+            }
+            
+            val writer = OutputStreamWriter(connection.outputStream)
+            writer.write(jsonData.toString())
+            writer.flush()
+            writer.close()
+            
+            val responseCode = connection.responseCode
+            android.util.Log.d("FT8DataService", "Band information sent: $band (HTTP $responseCode)")
+            connection.disconnect()
+            
+        } catch (e: Exception) {
+            // Log but don't fail connection if band update fails
+            android.util.Log.w("FT8DataService", "Failed to send band information: ${e.message}")
         }
     }
     
-    private suspend fun connectToSerialPort(device: String) {
-        withContext(Dispatchers.IO) {
-            // Serial port implementation would go here
-            // This is a placeholder for USB serial implementation
-            updateNotification("Serial port support: TODO")
-            // You would use usb-serial-for-android library here
-        }
-    }
     
     private fun processLine(line: String) {
         val decode = FT8Parser.parse(line)

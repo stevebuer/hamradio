@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
@@ -17,6 +18,7 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.hamradio.ft8auto.service.FT8DataService
 import com.hamradio.ft8auto.service.GPSUploadService
 import com.hamradio.ft8auto.util.PreferencesManager
+import kotlinx.coroutines.*
 
 /**
  * Fragment for app settings and configuration
@@ -37,6 +39,7 @@ class SettingsFragment : Fragment() {
     private lateinit var gpsIntervalLabel: TextView
     
     private val bands = arrayOf("Select Band", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m")
+    private val coroutineScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -64,9 +67,14 @@ class SettingsFragment : Fragment() {
         gpsIntervalLabel = view.findViewById(R.id.gpsIntervalLabel)
         
         // Load and display saved preferences
-        loadPreferences()
-        setupListeners()
-        setupBandSpinner()
+        setupBandSpinner()  // Setup adapter first
+        setupListeners()    // Then setup listeners (including band spinner listener)
+        loadPreferences()   // Finally load saved values
+    }
+    
+    override fun onDestroyView() {
+        super.onDestroyView()
+        coroutineScope.cancel()
     }
     
     private fun loadPreferences() {
@@ -158,6 +166,23 @@ class SettingsFragment : Fragment() {
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+        
+        bandSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                val band = bands[position]
+                if (band != "Select Band") {
+                    // Save preference to local state
+                    PreferencesManager.setCurrentBand(band)
+                    android.widget.Toast.makeText(
+                        requireContext(),
+                        "Band changed to $band. Disconnect and reconnect to apply.",
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
+        }
     }
     
     private fun saveNetworkSettings() {
@@ -243,6 +268,7 @@ class SettingsFragment : Fragment() {
         builder.setNegativeButton("Cancel", null)
         builder.show()
     }
+
     
     private fun updateGpsIntervalLabel(seconds: Int) {
         gpsIntervalLabel.text = "GPS Upload Interval: $seconds seconds"

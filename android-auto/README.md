@@ -1,12 +1,11 @@
 # FT8 Auto Display
 
-An Android Auto application that displays decoded FT8 messages on your car's screen. The app acts as a messaging app in Android Auto and receives FT8 decode data from an external source via network or serial connection.
+An Android Auto application that displays decoded FT8 messages on your car's screen. The app acts as a messaging app in Android Auto and receives FT8 decode data from an external source via network connection.
 
 ## Features
 
 - 📱 **Android Auto Integration**: Appears as a messaging app in Android Auto
 - 🌐 **Network Support**: Receives FT8 decodes over TCP/IP connection
-- 🔌 **Serial Support**: Can read from USB serial devices (FTDI, etc.)
 - 📊 **Live Display**: Shows recent FT8 decodes with callsign, grid, SNR, and message
 - 🚗 **Car-Optimized UI**: Designed for safe viewing while driving
 
@@ -16,9 +15,9 @@ The app consists of several components:
 
 - **FT8DecodeManager**: Singleton that manages the list of decoded messages
 - **FT8Parser**: Parses FT8 decode messages from various formats (WSJT-X, simple format)
-- **FT8DataService**: Background service that receives data from network or serial port
+- **FT8DataService**: Background service that receives data from network
 - **FT8MessagingService**: Android Auto Car App Service that displays decodes
-- **MainActivity**: Configuration UI for network/serial settings
+- **MainActivity**: Configuration UI for network settings
 
 ## Data Format
 
