@@ -176,15 +176,82 @@ Set up a Raspberry Pi with:
 
 ### Using Android Auto DHU (Desktop Head Unit)
 
-1. Enable developer mode on Android Auto
-2. Install Android Auto Desktop Head Unit
-3. Connect your device via USB with debugging enabled
-4. Run DHU to test the app without a car
+The Android Auto Desktop Head Unit (DHU) lets you test the app without a physical car. You can run it independently without Android Studio.
+
+#### Option 1: Standalone DHU (Fastest for Development)
+
+If you've already installed Android Studio, you can run DHU directly:
 
 ```bash
-# Start DHU
-~/android-auto/desktop-head-unit.exe
+# Find and run the DHU executable
+~/Android/Sdk/extras/google/auto/desktop-head-unit
 ```
+
+#### Option 2: Download DHU Separately (Lightweight Alternative)
+
+If you don't have Android Studio installed, you can download just the DHU:
+
+1. **Download Android SDK Command-line Tools:**
+   ```bash
+   # Go to https://developer.android.com/studio and download "Command line tools only"
+   mkdir ~/android-sdk
+   cd ~/android-sdk
+   unzip ~/Downloads/cmdline-tools-linux-*.zip
+   ```
+
+2. **Install the Android Auto extra:**
+   ```bash
+   ./cmdline-tools/bin/sdkmanager "extras;google;auto"
+   ```
+
+3. **Run DHU:**
+   ```bash
+   ./extras/google/auto/desktop-head-unit
+   ```
+
+#### Setup and Testing Steps
+
+1. **Start DHU** using one of the methods above
+2. **Enable USB Debugging** on your Android device:
+   - Settings → System → Developer Options → USB Debugging
+3. **Connect your device** via USB cable
+4. **Build and install the app:**
+   ```bash
+   ./gradlew installDebug
+   ```
+5. **Launch the app** on your device from the application launcher
+6. **View it in DHU** - The app will appear in the messaging section of the DHU interface
+
+#### Troubleshooting DHU Connection
+
+- If your device doesn't appear in DHU, try: `adb devices` to verify the connection
+- On Linux, you may need to set up USB permissions: `echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="<vendor_id>", MODE="0666"' | sudo tee /etc/udev/rules.d/51-android.rules`
+- Restart the ADB daemon: `adb kill-server && adb start-server`
+
+#### FT8 Auto App Not Appearing in DHU Messaging List
+
+If the FT8 Auto app doesn't appear in the DHU messaging app list, try:
+
+1. **Restart the DHU**: The DHU caches app discovery at startup
+   ```bash
+   pkill -f desktop-head-unit
+   ./start-dhu.sh
+   ```
+
+2. **Make sure the app is installed and running**:
+   ```bash
+   adb shell pm list packages | grep ft8auto
+   adb shell am start -n com.hamradio.ft8auto/.MainActivity
+   ```
+
+3. **Check app is properly declared**: The app should be in the phone's application list. If not, reinstall:
+   ```bash
+   ./gradlew installDebug
+   ```
+
+4. **Verify Car App compatibility**: Some older Android versions or DHU versions may have issues with Car App Service discovery. The app is properly configured but DHU app discovery can be inconsistent.
+
+Note: The FT8 Auto Display is designed to work with both physical cars and the DHU, but Car App discovery is not always reliable on all Android versions.
 
 ## Project Structure
 
