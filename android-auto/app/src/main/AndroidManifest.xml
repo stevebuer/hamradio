@@ -1,24 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Permissions -->
+    <!-- Core permissions your app already uses -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+
+    <!-- Storage (legacy) -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    
-    <!-- Android Auto Car App Permissions -->
-    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" />
 
-    <!-- Android Auto metadata -->
-    <uses-feature
-        android:name="android.hardware.type.automotive"
-        android:required="false" />
+    <!-- Optional: if your app needs to read notifications or messages -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:allowBackup="true"
@@ -29,7 +26,7 @@
         android:theme="@style/Theme.FT8AutoDisplay"
         android:networkSecurityConfig="@xml/network_security_config">
 
-        <!-- Main Activity -->
+        <!-- Main launcher activity -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -40,25 +37,29 @@
             </intent-filter>
         </activity>
 
-        <!-- Android Auto Car App Service -->
+        <!-- Android Auto Messaging Service -->
         <service
             android:name=".auto.FT8MessagingService"
-            android:exported="true"
-            android:foregroundServiceType="connectedDevice">
+            android:exported="true">
+
             <intent-filter>
-                <action android:name="androidx.car.app.CarAppService" />
-                <category android:name="androidx.car.app.category.MESSAGING" />
+                <!-- Correct action for messaging apps -->
+                <action android:name="androidx.car.app.messaging.CarMessagingService" />
             </intent-filter>
+
+            <!-- Required metadata -->
+            <meta-data
+                android:name="androidx.car.app.messaging"
+                android:value="true" />
         </service>
 
-        <!-- Data Receiver Service -->
+        <!-- Your other app services -->
         <service
             android:name=".service.FT8DataService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
-        <!-- GPS Upload Service -->
         <service
             android:name=".service.GPSUploadService"
             android:enabled="true"
@@ -68,3 +69,4 @@
     </application>
 
 </manifest>
+

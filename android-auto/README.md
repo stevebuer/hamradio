@@ -156,6 +156,8 @@ This app does **not** decode FT8 signals. You need a separate system to:
    - TCP/IP network connection
    - USB serial port
 
+**Future transmission feature:** The app will support sending FT8 beacons to test propagation. Your backend system would receive transmission requests from the app and queue them for transmission via your FT8 transmitter.
+
 ### Example: Using WSJT-X
 
 WSJT-X can log decodes to a file. You can tail this file and send it to the app:
@@ -298,12 +300,13 @@ This project is provided as-is for ham radio operators. Feel free to modify and 
 
 Contributions are welcome! Some ideas for improvements:
 
-- [ ] Add Bluetooth support for data reception
-- [ ] Implement full USB serial communication
+- [x] ~~Add Bluetooth support for data reception~~ (Network-based instead)
+- [ ] **Beacon transmission** - Send FT8 beacons from the car to test propagation
 - [ ] Add filtering by callsign or grid square
 - [ ] Add statistics and decode history
 - [ ] Support for other digital modes (FT4, PSK31, etc.)
 - [ ] Map view showing station locations
+- [ ] Message composition and transmission (future enhancement)
 
 ## Safety Note
 

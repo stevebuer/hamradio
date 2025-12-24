@@ -1,28 +1,40 @@
 package com.hamradio.ft8auto.auto
 
-import android.content.Intent
-import androidx.car.app.CarAppService
-import androidx.car.app.Screen
-import androidx.car.app.Session
-import androidx.car.app.validation.HostValidator
+import androidx.car.app.messaging.CarMessagingService
+import androidx.car.app.messaging.ConversationItem
+import androidx.car.app.messaging.Message
+import androidx.car.app.messaging.Person
 
 /**
- * Android Auto Car App Service for FT8 decodes
- * This makes the app appear as a messaging app in Android Auto
+ * Android Auto Messaging Service for FT8 decodes.
+ * This exposes FT8 message conversations to Android Auto.
+ *
+ * IMPORTANT:
+ * - Messaging apps do NOT use CarAppService, Sessions, or Screens.
+ * - Android Auto pulls conversations from this service and from notifications.
  */
-class FT8MessagingService : CarAppService() {
-    
-    override fun createHostValidator(): HostValidator {
-        return HostValidator.ALLOW_ALL_HOSTS_VALIDATOR
+class FT8MessagingService : CarMessagingService() {
+
+    /**
+     * Return the list of active conversations.
+     * You will populate this from your FT8 decode data.
+     */
+    override fun onGetConversations(): List<ConversationItem> {
+        // TODO: Replace this with real FT8 conversation data
+        return emptyList()
     }
-    
-    override fun onCreateSession(): Session {
-        return FT8Session()
+
+    /**
+     * Called when the host (Android Auto) wants to mark a conversation as read.
+     */
+    override fun onMarkAsRead(conversationId: String) {
+        // TODO: Update your internal state to mark messages as read
     }
-    
-    inner class FT8Session : Session() {
-        override fun onCreateScreen(intent: Intent): Screen {
-            return FT8MainScreen(carContext)
-        }
+
+    /**
+     * Called when the user replies from Android Auto.
+     */
+    override fun onSendMessage(conversationId: String, messageText: String) {
+        // TODO: Send the FT8 message through your backend or radio interface
     }
 }
